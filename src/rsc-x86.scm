@@ -11,7 +11,7 @@
 
 ;;;----------------------------------------------------------------------------
 
-(define debug? #f) ;; set to #t to show expanded code, intermediate code and x86 code
+(define debug? #t) ;; set to #t to show expanded code, intermediate code and x86 code
 
 ;;;----------------------------------------------------------------------------
 
@@ -114,10 +114,11 @@
 
 (def-prim '* 2 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($*)) (newline)))
-  ;; TODO...
-  (x86-pop  cgc (x86-rax)) ;; ce code est incorrect!
-  (x86-pop  cgc (x86-rax))
-  (x86-push cgc (x86-imm-int 400 0))))
+  (x86-pop   cgc (x86-rbx)) ;; load y
+  (x86-pop   cgc (x86-rax)) ;; load x
+  (x86-shr   cgc (x86-rax) (x86-imm-int 3 0)) ;; untag x
+  (x86-imul1 cgc (x86-rbx)) ;; multiply x * y
+  (x86-push  cgc (x86-rax)))) ;; push result
 
 (def-prim 'quotient 2 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($quotient)) (newline)))
