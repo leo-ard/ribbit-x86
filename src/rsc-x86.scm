@@ -35,17 +35,25 @@
 (def-prim 'rib 3 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($rib)) (newline)))
   ;; TODO...
-  (x86-pop  cgc (x86-rax)) ;; ce code est incorrect!
-  (x86-pop  cgc (x86-rax))
-  (x86-pop  cgc (x86-rax))
-  (x86-push cgc (x86-imm-int 400 0))))
-
+  (x86-add  cgc (x86-r10) (x86-imm-int (* 8 3) 0)) ;; allouer 3 mots
+  (x86-pop  cgc (x86-mem (* 8 -1) (x86-r10))) ;; field2 = fixnum 3
+  (x86-pop  cgc (x86-mem (* 8 -2) (x86-r10))) ;; field1 = fixnum 2
+  (x86-pop  cgc (x86-mem (* 8 -3) (x86-r10))) ;; field0 = fixnum 1
+  (x86-lea  cgc (x86-rax) (x86-mem -17 (x86-r10))) 
+  (x86-push cgc (x86-rax))))
+  
 (def-prim 'rib? 1 (lambda (cgc)
   (define done (asm-make-label* cgc))
   (if debug? (begin (display "#  ") (write '($rib?)) (newline)))
   ;; TODO...
   (x86-pop  cgc (x86-rax)) ;; ce code est incorrect!
-  (x86-push cgc (x86-imm-int 400 0))))
+  (x86-xor  cgc (x86-rax) (x86-imm-int 7 0))
+  (x86-cmp  cgc (x86-rax) (x86-imm-int 7 0))
+  (x86-mov  cgc (x86-rax) (true-value cgc))
+  (x86-je   cgc done)
+  (x86-mov  cgc (x86-rax) (false-value cgc))
+  (x86-label cgc done)
+  (x86-push cgc (x86-rax))))
 
 (def-prim 'field0 1 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($field0)) (newline)))
@@ -96,11 +104,21 @@
   (x86-push cgc (x86-rax))))                 ;; push result
 
 (def-prim '< 2 (lambda (cgc)
+  (define done (asm-make-label* cgc))
   (if debug? (begin (display "#  ") (write '($<)) (newline)))
   ;; TODO...
-  (x86-pop  cgc (x86-rax)) ;; ce code est incorrect!
-  (x86-pop  cgc (x86-rax))
-  (x86-push cgc (x86-imm-int 400 0))))
+  (x86-pop  cgc (x86-rbx)) ;; 1
+  (x86-pop  cgc (x86-rax)) ;; 2
+  (x86-cmp  cgc (x86-rax) (x86-rbx)) ;; 2 - 1 => 1 
+  (x86-mov  cgc (x86-rax) (true-value cgc))  ;; result = #t (maybe)
+  (x86-jb   cgc done)
+  (x86-mov  cgc (x86-rax) (false-value cgc))  ;; result = #t (maybe)
+  (x86-label cgc done)
+  (x86-push cgc (x86-rax))))
+  
+
+
+  ;;(x86-push cgc (x86-imm-int 400 0))))
 
 (def-prim '+ 2 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($+)) (newline)))
@@ -241,8 +259,14 @@
 (define (gen-iffalse cgc lbl)
   (if debug? (begin (display "#  ") (write (cons 'iffalse (cons (asm-label-id lbl) '()))) (newline)))
   ;; TODO...
-  (x86-push cgc (x86-imm-int 1 0)) ;; code à remplacer!
-  (x86-call cgc (x86-global-label cgc 'exit)))
+  (x86-pop  cgc (x86-rax))
+  (x86-mov  cgc (x86-rbx) (false-value cgc))
+  (x86-cmp  cgc (x86-rax) (x86-rbx))
+  (x86-je   cgc lbl)
+
+  ;(x86-push cgc (x86-imm-int 1 0)) ;; code à remplacer!
+  ;(x86-call cgc (x86-global-label cgc 'exit))
+  )
 
 (define (gen-goto cgc lbl)
   (if debug? (begin (display "#  ") (write (cons 'goto (cons (asm-label-id lbl) '()))) (newline)))
