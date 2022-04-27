@@ -11,7 +11,7 @@
 
 ;;;----------------------------------------------------------------------------
 
-(define debug? #t) ;; set to #t to show expanded code, intermediate code and x86 code
+(define debug? #f) ;; set to #t to show expanded code, intermediate code and x86 code
 
 ;;;----------------------------------------------------------------------------
 
@@ -241,14 +241,30 @@
   (x86-lea  cgc (x86-rax) lbl) ;; get address of label
   (x86-push cgc (x86-rax)))    ;; push it
 
+(define-macro (repeat n ins)
+   `(begin ,@(map (lambda (x) ins) (iota n))))
+
+  
+
 (define (gen-jump cgc nargs)
   (if debug? (begin (display "#  ") (write (cons 'jump (cons nargs '()))) (newline)))
   ;; TODO...
-  (x86-push cgc (x86-imm-int 1 0)) ;; code à remplacer!
-  (x86-call cgc (x86-global-label cgc 'exit)))
+  ;(x86-int3 cgc)
+  ;(x86-mov  cgc (x86-rdi) )   ;; get jmp adr
+  ;(gen-move cgc nargs 1)
+  ;(x86-pop  cgc (x86-rax))                                   ;; get return addr
+  ;(map (lambda (i) (x86-push cgc (x86-mem (* 8 i) (x86-r11)))) (iota nargs)) 
+  ;(x86-push cgc (x86-rdi))
+  ;(map (lambda (i) (x86-pop cgc (x86-mem (* 8 (- nargs i)) (x86-r11)))) (iota nargs))
+
+  ;(x86-mov  cgc (x86-mem (* 8 nargs) (x86-rsp)) (x86-rax))         ;; modify return addr
+  ;(x86-int3 cgc)
+  (x86-jmp  cgc (x86-mem (* 8 (+ 1 nargs)) (x86-rsp)))
+  )
 
 (define (gen-ret cgc i n)
   (if debug? (begin (display "#  ") (write (cons 'ret (cons i (cons n '())))) (newline)))
+  ;(x86-int3 cgc)
   (x86-mov  cgc (x86-rdi) (x86-mem (* 8 i) (x86-rsp)))   ;; get return addr
   (x86-mov  cgc (x86-rax) (x86-mem 0 (x86-rsp)))         ;; get return value
   (x86-add  cgc (x86-rsp) (x86-imm-int (* 8 (+ n 1)) 0)) ;; pop frame
@@ -507,6 +523,9 @@
 (define (gen-expr cgc expr cte tail?)
 
   (cond ((symbol? expr)
+	 (pp "gen-expr > symbol?")
+	 (pp cte)
+	 (pp expr)
          (let* ((var expr)
                 (i (- (length cte) (length (memv var cte)))))
            (gen-push-loc cgc i)
@@ -555,6 +574,7 @@
                           (gen-label cgc cont)))))
 
                  ((eqv? first 'let)
+		  (step)
                   (let* ((bindings (cadr expr))
                          (body (cddr expr)))
                     (let loop ((lst bindings) (cte cte) (cte* cte))
@@ -585,13 +605,25 @@
                                   cte
                                   (lambda (cte*)
                                     (let ((nargs (length (cdr expr))))
+				      (x86-int3 cgc)
                                       (if tail?
                                           (begin
+					    ;; pop all the variables
+					    ;; todo test this
+					    ;(x86-int3 cgc)
+					    ;(x86-pop cgc (x86-rdi))
+					    (x86-mov cgc (x86-rdi) (x86-mem (* 8  nargs) (x86-rsp)))
+					    (gen-move cgc (+ nargs 2) (+ nargs 1))
+					    ;(gen-move cgc 1 (+ nargs 2))
+					    ;(x86-mem (* 8 (+ 1 nargs)) (x86-rsp))
+					    ;(x86-lea cgc (x86-rsp) (x86-mem (* 8 (+ 1 nargs)) (x86-rsp)))
+					    (x86-jmp cgc (x86-rdi))
                                             ;; TODO...
                                             ;; appel terminal
-                                            #f)
+                                            )
                                           (let ((ra (asm-make-label* cgc)))
                                             (gen-push-ra cgc ra)
+					    
                                             (gen-jump cgc nargs)
                                             (gen-label cgc ra))))))))))))
 
