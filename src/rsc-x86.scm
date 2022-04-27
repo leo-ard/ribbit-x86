@@ -34,7 +34,6 @@
 
 (def-prim 'rib 3 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($rib)) (newline)))
-  ;; TODO...
   (x86-add  cgc (x86-r10) (x86-imm-int (* 8 3) 0)) ;; allouer 3 mots
   (x86-pop  cgc (x86-mem (* 8 -1) (x86-r10))) ;; field2 = fixnum 3
   (x86-pop  cgc (x86-mem (* 8 -2) (x86-r10))) ;; field1 = fixnum 2
@@ -45,15 +44,15 @@
 (def-prim 'rib? 1 (lambda (cgc)
   (define done (asm-make-label* cgc))
   (if debug? (begin (display "#  ") (write '($rib?)) (newline)))
-  ;; TODO...
-  (x86-pop  cgc (x86-rax)) ;; ce code est incorrect!
-  (x86-xor  cgc (x86-rax) (x86-imm-int 7 0))
-  (x86-cmp  cgc (x86-rax) (x86-imm-int 7 0))
-  (x86-mov  cgc (x86-rax) (true-value cgc))
-  (x86-je   cgc done)
-  (x86-mov  cgc (x86-rax) (false-value cgc))
+
+  (x86-pop   cgc (x86-rax)) 
+  (x86-and   cgc (x86-rax) (x86-imm-int 7 0))
+  (x86-cmp   cgc (x86-rax) (x86-imm-int 7 0))
+  (x86-mov   cgc (x86-rax) (true-value cgc))
+  (x86-je    cgc done)
+  (x86-mov   cgc (x86-rax) (false-value cgc))
   (x86-label cgc done)
-  (x86-push cgc (x86-rax))))
+  (x86-push  cgc (x86-rax))))
 
 (def-prim 'field0 1 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($field0)) (newline)))
