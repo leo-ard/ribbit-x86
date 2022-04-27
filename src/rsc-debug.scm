@@ -583,9 +583,9 @@
 (define (extract-exports program)
   ;; By default all symbols are exported when the program contains
   ;; no (export ...) form.
-  (display "On se rend au debut du extract-exports au moins")
+  ;;(display "On se rend au debut du extract-exports au moins")
   (let loop ((lst program) (rev-exprs '()) (exports #f))
-    (display "Dans la boucle")
+    ;;(display "Dans la boucle")
     (if (pair? lst)
         (let ((first (car lst)))
           (if (and (pair? first) (eqv? (car first) 'export))
@@ -607,7 +607,7 @@
       exports))
 
 (define (comp-exprs-with-exports exprs exports)
-  (display "On se rend au debut de comp-exprs-with-exports")
+  ;;(display "On se rend au debut de comp-exprs-with-exports")
   (let* ((expansion (expand-begin exprs))
          (live (liveness-analysis expansion exports)))
     (display expansion)
@@ -626,7 +626,7 @@
               live)))))
 
 (define (compile-program verbosity program)
-  (display "Tout debut de la compilation")
+  ;;(display "Tout debut de la compilation")
   (let* ((exprs-and-exports
           (extract-exports program))
          (exprs
