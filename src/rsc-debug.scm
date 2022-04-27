@@ -610,6 +610,7 @@
   (display "On se rend au debut de comp-exprs-with-exports")
   (let* ((expansion (expand-begin exprs))
          (live (liveness-analysis expansion exports)))
+    (display expansion)
     (cons
      (make-procedure
       (rib 0 ;; 0 parameters
