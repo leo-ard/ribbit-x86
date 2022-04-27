@@ -1,0 +1,3 @@
+./rsc -t idr -l max rsc-debug.scm
+idris2 --output-dir . -o rsc-debug.exe rsc-debug.scm.idr 
+cat lib/empty.scm a.scm | ./rsc-debug.exe
