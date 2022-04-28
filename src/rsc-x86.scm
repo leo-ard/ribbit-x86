@@ -574,7 +574,6 @@
                           (gen-label cgc cont)))))
 
                  ((eqv? first 'let)
-		  (step)
                   (let* ((bindings (cadr expr))
                          (body (cddr expr)))
                     (let loop ((lst bindings) (cte cte) (cte* cte))
@@ -605,25 +604,31 @@
                                   cte
                                   (lambda (cte*)
                                     (let ((nargs (length (cdr expr))))
-				      (x86-int3 cgc)
+				      ;(x86-int3 cgc)
                                       (if tail?
                                           (begin
+					    (let ((fs (+ 1 (length cte))))
+					      (pp "help me")
+					      (pp cte)
+					      (pp nargs)
+					      (x86-mov cgc (x86-rdi) (x86-mem (* 8  (+ 1 nargs)) (x86-rsp)))
+					      (x86-mov cgc (x86-rbx) (x86-mem (* 8  nargs) (x86-rsp)))
+					      (gen-move cgc (+ nargs 1) fs)
+					      (x86-push cgc (x86-rdi))
+					      ;(gen-move cgc 1 (+ nargs 2))
+					      ;(x86-mem (* 8 (+ 1 nargs)) (x86-rsp))
+					      ;(x86-lea cgc (x86-rsp) (x86-mem (* 8 (+ 1 nargs)) (x86-rsp)))
+					      (x86-jmp cgc (x86-rbx))
+					      )
 					    ;; pop all the variables
 					    ;; todo test this
 					    ;(x86-int3 cgc)
 					    ;(x86-pop cgc (x86-rdi))
-					    (x86-mov cgc (x86-rdi) (x86-mem (* 8  nargs) (x86-rsp)))
-					    (gen-move cgc (+ nargs 2) (+ nargs 1))
-					    ;(gen-move cgc 1 (+ nargs 2))
-					    ;(x86-mem (* 8 (+ 1 nargs)) (x86-rsp))
-					    ;(x86-lea cgc (x86-rsp) (x86-mem (* 8 (+ 1 nargs)) (x86-rsp)))
-					    (x86-jmp cgc (x86-rdi))
                                             ;; TODO...
                                             ;; appel terminal
                                             )
                                           (let ((ra (asm-make-label* cgc)))
                                             (gen-push-ra cgc ra)
-					    
                                             (gen-jump cgc nargs)
                                             (gen-label cgc ra))))))))))))
 

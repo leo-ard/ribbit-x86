@@ -1,0 +1,16 @@
+
+(define ($putchar x) (display (integer->char x)))
+(define ($getchar) (char->integer (read-char)))
+(define $+ +)
+(define $- -)
+(define $* *)
+(define $quotient quotient)
+(define $eqv? eqv?)
+(define $< <)
+(define ($rib? rib) (not (number? rib))) 
+(define ($rib a b c) (vector a b c))
+(define ($field0 rib) (vector-ref rib 0)) 
+(define ($field1 rib) (vector-ref rib 1)) 
+(define ($field2 rib) (vector-ref rib 2)) 
+(define $exit exit)
+

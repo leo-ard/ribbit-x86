@@ -38,6 +38,12 @@ test2: $(RSC).bundle.scm
 	echo "(this '(is a list) containing 5 \"elements\")" | ./test2.exe
 #	rm test2.exe$(EXT) test2.exe
 
+test3: $(RSC).bundle.scm
+	time ./rsc -t $(TARGET) -l empty -m -c "gsi -:d4 $<" -o test3.exe$(EXT) test3.scm
+	gcc -o test3.exe test3.exe$(EXT)
+	echo "(this '(is a list) containing 5 \"elements\")" | ./test3.exe
+#	rm test3.exe$(EXT) test3.exe
+
 test-bootstrap1: $(RSC).bootstrap1.exe
 	time ./rsc -t $(TARGET) -l empty -m -c ./$< -o test1-bootstrap1.exe$(EXT) test1.scm
 	gcc -o test1-bootstrap1.exe test1-bootstrap1.exe$(EXT)

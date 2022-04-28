@@ -135,6 +135,70 @@
 (begin
   ($putchar ($getchar)) ($putchar ($getchar)) ($putchar 10))
 
+(begin ;; display "define --"
+  ($putchar 100) ($putchar 101) ($putchar 102) ($putchar 105) ($putchar 110) 
+  ($putchar 101) ($putchar 32)  ($putchar 45)  ($putchar 45))
+
+(define x 32)
+(define y 111)
+(define z 107)
+
+($putchar x)
+($putchar y)
+($putchar z)
+($putchar 10)
+
+(begin ;; display "call 0 --"
+  ($putchar 99) ($putchar 97) ($putchar 108) ($putchar 108) 
+  ($putchar 32) ($putchar 48) ($putchar 32) ($putchar 45) ($putchar 45)
+  )
+
+(define (f) ($putchar 32) ($putchar 111) ($putchar 107) ($putchar 10))
+(f)
+
+(begin ;; display "call 1 --"
+  ($putchar 99) ($putchar 97) ($putchar 108) ($putchar 108) 
+  ($putchar 32) ($putchar 49) ($putchar 32) ($putchar 45) ($putchar 45)
+  )
+
+(define (g x) ($putchar x))
+
+(g 32)
+(g 79)
+(g 75)
+(g 10)
+
+  
+(begin ;; display "call 2 --"
+  ($putchar 99) ($putchar 97) ($putchar 108) ($putchar 108) 
+  ($putchar 32) ($putchar 50) ($putchar 32) ($putchar 45) ($putchar 45)
+  )
+
+(define (h a b) (g a) (g b))
+(g 32)
+(h 79 75)
+;(h 10 10)
+(g 10)
+
+(begin ;; display "list --"
+  ($putchar 108) ($putchar 105) ($putchar 115) ($putchar 116)
+  ($putchar 32) ($putchar 45) ($putchar 45))
+
+(define (car lst) ($field0 lst))
+(define (cdr lst) ($field1 lst))
+(define (cons car cdr) ($rib car cdr 0)) ;; 0 for pair-type
+
+(define lst (cons 79 (cons 75 10)))
+
+(define (print-lst lst)
+  (if ($rib? lst)
+    (begin
+      ($putchar (car lst))
+      (print-lst (cdr lst)))
+    0))
+(print-lst lst)
+
+
 (begin ;; display "calling ($exit 0)"
   ($putchar 99) ($putchar 97) ($putchar 108) ($putchar 108)
   ($putchar 105) ($putchar 110) ($putchar 103) ($putchar 32)
