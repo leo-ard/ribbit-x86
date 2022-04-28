@@ -211,7 +211,19 @@ setCar (RRef stack) newval = do ref <- readIORef stack
                                 let v = (MakeRibContainer ref.id newval ref.cdr ref.cgr )
                                 writeIORef stack v
                                 --modifyIORef stack (\ref => { car := newval } ref)
-setCar _ _ = do error "First argument of setcar is not a rib"
+setCar a b = do globalCounter <- newIORef 0 -- only used for the ribCreator
+                ribCreator <- pure (MakeRib globalCounter)
+                true <- ribCreator (RInt 0) (RInt 0) (RInt rSingletonType)
+                false <- ribCreator (RInt 0) (RInt 0) (RInt rSingletonType)
+                nil <- ribCreator (RInt 0) (RInt 0) (RInt rSingletonType)
+                pos <- newIORef 0
+                let state = MkState true false nil pos globalCounter nil
+                putStrLn "AAAAA:"
+                print state a
+                putStrLn "BBBBB:"
+                print state b
+                error "Hey look"
+--setCar _ _ = do error "First argument of setcar is not a rib"
 
 setCdr : Rib -> Rib -> HasIO io => io ()
 setCdr (RRef stack) newval = do ref <- readIORef stack
