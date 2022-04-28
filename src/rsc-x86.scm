@@ -595,6 +595,7 @@
                                  expr
                                  cte
                                  (lambda (cte*)
+                                   (x86-int3 cgc)
                                    (let ((nargs (length (cdr expr))))
                                      (if tail?
                                        (let ((fs (+ 1 (length cte)))) ;; tail call
