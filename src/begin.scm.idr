@@ -5,7 +5,7 @@ import Data.String
 import System
 
 input : String
-input = "#rahctup,!tes-1dleif,1gra,,,,bir;)^[$vR7vR6>?ki#!\':lkm!(:lku!):lkv6y" -- RVM code that prints HELLO!
+input = "#!tes-1dleif,rahctup,1gra,,,,bir;(^>?^vR6>@ki#!\':lkm!):lku!(:lkv6y" -- RVM code that prints HELLO!
 
 
 ----------------------
