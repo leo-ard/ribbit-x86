@@ -248,19 +248,11 @@
 
 (define (gen-jump cgc nargs)
   (if debug? (begin (display "#  ") (write (cons 'jump (cons nargs '()))) (newline)))
-  ;; TODO...
-  ;(x86-int3 cgc)
-  ;(x86-mov  cgc (x86-rdi) )   ;; get jmp adr
-  ;(gen-move cgc nargs 1)
-  ;(x86-pop  cgc (x86-rax))                                   ;; get return addr
-  ;(map (lambda (i) (x86-push cgc (x86-mem (* 8 i) (x86-r11)))) (iota nargs)) 
-  ;(x86-push cgc (x86-rdi))
-  ;(map (lambda (i) (x86-pop cgc (x86-mem (* 8 (- nargs i)) (x86-r11)))) (iota nargs))
-
-  ;(x86-mov  cgc (x86-mem (* 8 nargs) (x86-rsp)) (x86-rax))         ;; modify return addr
-  ;(x86-int3 cgc)
-  (x86-jmp  cgc (x86-mem (* 8 (+ 1 nargs)) (x86-rsp)))
-  )
+  
+  (x86-mov  cgc (x86-rdi) (x86-mem (* 8 (+ 1 nargs)) (x86-rsp)))  ;; get jump addr
+  (gen-move cgc (+ 1 nargs) 1)                                    ;; remove label 
+  (x86-jmp  cgc (x86-rdi)))                                       ;; jump
+  
 
 (define (gen-ret cgc i n)
   (if debug? (begin (display "#  ") (write (cons 'ret (cons i (cons n '())))) (newline)))
@@ -591,46 +583,37 @@
                                 (gen-move cgc 1 (length bindings))))))))
 
                  (else
-                  (let ((p (assv first prims)))
-                    (if p ;; calling a primitive?
-                        (gen-list cgc
-                                  (cdr expr)
-                                  cte
-                                  (lambda (cte*)
-                                    ((cadr p) cgc) ;; inline the primitive
-                                    (gen-ret-maybe cgc cte tail?)))
-                        (gen-list cgc
-                                  expr
-                                  cte
-                                  (lambda (cte*)
-                                    (let ((nargs (length (cdr expr))))
-				      ;(x86-int3 cgc)
-                                      (if tail?
-                                          (begin
-					    (let ((fs (+ 1 (length cte))))
-					      (pp "help me")
-					      (pp cte)
-					      (pp nargs)
-					      (x86-mov cgc (x86-rdi) (x86-mem (* 8  (+ 1 nargs)) (x86-rsp)))
-					      (x86-mov cgc (x86-rbx) (x86-mem (* 8  nargs) (x86-rsp)))
-					      (gen-move cgc (+ nargs 1) fs)
-					      (x86-push cgc (x86-rdi))
-					      ;(gen-move cgc 1 (+ nargs 2))
-					      ;(x86-mem (* 8 (+ 1 nargs)) (x86-rsp))
-					      ;(x86-lea cgc (x86-rsp) (x86-mem (* 8 (+ 1 nargs)) (x86-rsp)))
-					      (x86-jmp cgc (x86-rbx))
-					      )
-					    ;; pop all the variables
-					    ;; todo test this
-					    ;(x86-int3 cgc)
-					    ;(x86-pop cgc (x86-rdi))
-                                            ;; TODO...
-                                            ;; appel terminal
-                                            )
-                                          (let ((ra (asm-make-label* cgc)))
-                                            (gen-push-ra cgc ra)
-                                            (gen-jump cgc nargs)
-                                            (gen-label cgc ra))))))))))))
+                   (let ((p (assv first prims)))
+                     (if p ;; calling a primitive?
+                       (gen-list cgc
+                                 (cdr expr)
+                                 cte
+                                 (lambda (cte*)
+                                   ((cadr p) cgc) ;; inline the primitive
+                                   (gen-ret-maybe cgc cte tail?)))
+                       (gen-list cgc
+                                 expr
+                                 cte
+                                 (lambda (cte*)
+                                   (let ((nargs (length (cdr expr))))
+                                     (if tail?
+                                       (let ((fs (+ 1 (length cte)))) ;; tail call
+                                         ;; get return addr of func
+                                         (x86-mov 
+                                           cgc 
+                                           (x86-rdi) 
+                                           (x86-mem (* 8  (+ 1 nargs)) (x86-rsp)))
+                                         ;; get func addr
+                                         (x86-mov 
+                                           cgc 
+                                           (x86-rbx) (x86-mem (* 8  nargs) (x86-rsp)))
+                                         (gen-move cgc nargs fs)  ;; delete old frame
+                                         (x86-push cgc (x86-rdi)) ;; push return addr
+                                         (x86-jmp cgc (x86-rbx))) ;; jump to function call
+                                       (let ((ra (asm-make-label* cgc)))
+                                         (gen-push-ra cgc ra)
+                                         (gen-jump cgc nargs)
+                                         (gen-label cgc ra))))))))))))
 
         (else
          (gen-push-lit cgc expr) ;; self-evaluating
