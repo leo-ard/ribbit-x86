@@ -195,9 +195,23 @@
     (begin
       ($putchar (car lst))
       (print-lst (cdr lst)))
-    0))
+    ($putchar lst)))
+
 (print-lst lst)
 
+(begin  ;; mut 1 -
+  ($putchar 109) ($putchar 117) ($putchar 116) ($putchar 32) ($putchar 49)
+  ($putchar 32) ($putchar 45) ($putchar 32))
+
+(define (mut a b c d)
+  (set! a 32)
+  (set! b 79)
+  ($putchar a)
+  ($putchar b)
+  ($putchar c)
+  ($putchar d))
+
+(mut 65 65 75 10)
 
 (begin ;; display "calling ($exit 0)"
   ($putchar 99) ($putchar 97) ($putchar 108) ($putchar 108)

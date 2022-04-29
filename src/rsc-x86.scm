@@ -11,7 +11,8 @@
 
 ;;;----------------------------------------------------------------------------
 
-(define debug? #f) ;; set to #t to show expanded code, intermediate code and x86 code
+(define debug? #t) ;; set to #t to show expanded code, intermediate code and x86 code
+(define display-method write) ;; put pp for testing, write to deploy !
 
 ;;;----------------------------------------------------------------------------
 
@@ -515,9 +516,6 @@
 (define (gen-expr cgc expr cte tail?)
 
   (cond ((symbol? expr)
-	 (pp "gen-expr > symbol?")
-	 (pp cte)
-	 (pp expr)
          (let* ((var expr)
                 (i (- (length cte) (length (memv var cte)))))
            (gen-push-loc cgc i)
@@ -595,7 +593,7 @@
                                  expr
                                  cte
                                  (lambda (cte*)
-                                   (x86-int3 cgc)
+                                   ;(x86-int3 cgc)
                                    (let ((nargs (length (cdr expr))))
                                      (if tail?
                                        (let ((fs (+ 1 (length cte)))) ;; tail call
@@ -1283,7 +1281,61 @@
   ;; formes lambda et let sont rencontrées dans le parcours récursif
   ;; de expr.
 
-  expr) ;; à compléter!
+  (cond 
+    ((symbol? expr)
+     expr)
+    ((pair? expr)
+     (let ((first (car expr)))
+       (cond 
+         ((eqv? first 'quote) expr)
+         ((eqv? first 'begin) 
+          (cons 'begin (mve-list (cdr expr) mutable-vars)))
+         ((eqv? first 'if)
+          (cons 'if (mve-list (cdr expr) mutable-vars)))
+         ((assv first prims)
+          (cons first (mve-list (cdr expr) mutable-vars)))
+         ((eqv? first 'set!)
+          (let ((body-rest (mve-list (cdr expr) (mv-list (cdr expr)))))
+            (cons '$field0-set! body-rest)))
+         ((eqv? first 'let)
+          (let* ((bindings (cadr expr))
+                 (body (cddr expr))
+                 (vars (map car bindings))
+
+                 (mutable-vars* (mv expr))
+                 (body* (simplify-begin (mve-list body mutable-vars))))
+            expr ;; gonna go after
+            ;; recursive call
+
+            ))
+         ((eqv? first 'lambda)
+          (let* ((params (cadr expr))
+                 (body (cddr expr))
+                 (mutable-vars* (mv-list body))
+                 (mutable-params (intersection mutable-vars* params))
+                 (body-rest (simplify-begin (mve-list body
+                                                      mutable-vars*)))
+                 )
+            (if debug? (begin (display " # mutable-params : ") (pp mutable-params)))
+            (cons 'lambda
+                  (cons params
+                        (if mutable-params
+                          (cons (cons 'let 
+                                      (cons (map (lambda (var) 
+                                                   (cons var 
+                                                         (cons (cons '$rib 
+                                                                     (cons var
+                                                                           (cons 0 (cons 0 '())))) '()))) 
+                                                 mutable-params)
+                                            body-rest)) '())
+                          body-rest
+
+                          )
+                        )))
+          )
+         (else (mve-list expr mutable-vars)))))
+    (else  (expand-constant expr))))
+
 
 (define (mve-list exprs mutable-vars)
   (if (pair? exprs)
@@ -1389,7 +1441,7 @@
          (_
           (if debug?
               (begin
-                (display "# expansion1 = ") (write expansion1) (newline))))
+                (display "# expansion1 = ") (display-method expansion1) (newline))))
          (live-global-vars
           (liveness-analysis expansion1 exports*))
          (_
@@ -1406,19 +1458,19 @@
          (_
           (if debug?
               (begin
-                (display "# expansion2 = ") (write expansion2) (newline))))
+                (display "# expansion2 = ") (display-method expansion2) (newline))))
          (expansion3
           (mve expansion2 '()))
          (_
           (if debug?
               (begin
-                (display "# expansion3 = ") (write expansion3) (newline))))
+                (display "# expansion3 = ") (display-method expansion3) (newline))))     
          (expansion4
           (cc expansion3 '()))
          (_
           (if debug?
               (begin
-                (display "# expansion4 = ") (write expansion4) (newline)))))
+                (display "# expansion4 = ") (display-method expansion4) (newline)))))
     (cons
      expansion4
      (cons
