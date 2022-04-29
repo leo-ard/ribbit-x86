@@ -30,6 +30,6 @@
 ;  ($putchar y)) 
 ;
 (define (f a b c d) (lambda (x) ($* ($+ a b) ($+ c x))))
-(f 1 2 3 4)
+($putchar ((f 1 2 3 4) 17))
 
 

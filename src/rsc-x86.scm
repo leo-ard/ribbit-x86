@@ -250,9 +250,10 @@
 (define (gen-jump cgc nargs)
   (if debug? (begin (display "#  ") (write (cons 'jump (cons nargs '()))) (newline)))
   
-  (x86-mov  cgc (x86-rdi) (x86-mem (* 8 (+ 1 nargs)) (x86-rsp)))  ;; get jump addr
-  (gen-move cgc (+ 1 nargs) 1)                                    ;; remove label 
-  (x86-jmp  cgc (x86-rdi)))                                       ;; jump
+  
+  (x86-mov  cgc (x86-rbx) (x86-mem (* 8 (+ 1 nargs)) (x86-rsp)))  ;; get rib function
+  ;(gen-move cgc (+ 1 nargs) 1)                                   ;; dont remove label anymore
+  (x86-jmp  cgc (x86-mem -7 (x86-rbx)))) ;; jump to (field0 rib-function)
   
 
 (define (gen-ret cgc i n)
@@ -602,6 +603,7 @@
                                  (lambda (cte*)
                                    ;(x86-int3 cgc)
                                    (let ((nargs (length (cdr expr))))
+                                     ;(x86-int3 cgc)
                                      (if tail?
                                        (let ((fs (+ 1 (length cte)))) ;; tail call
                                          ;; get return addr of func
