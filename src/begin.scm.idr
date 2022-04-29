@@ -5,7 +5,7 @@ import Data.String
 import System
 
 input : String
-input = "#rahctup,!tes-1dleif,1gra,,,,bir;)^[$vR7vR6>?ki#!\':lkm!(:lku!):lkv6y" -- RVM code that prints HELLO!
+input = "$!tes-1dleif,rahctup,1gra,,,,bir;(_[%vR7>?^[$vR7>?_i*vR6>@ki#!*:k:k:ki&nml!\':lkm!):lku!(:lkv6y" -- RVM code that prints HELLO!
 
 
 ----------------------
@@ -298,6 +298,7 @@ mutual
   addInstruction : State -> Rib -> Rib -> Rib -> HasIO io => io (Rib)
   addInstruction state op opnd stack = do oscar <- rCar stack
                                           newRib <- MakeRib state.globalCounter op opnd oscar
+                                          putStrLn "addinstruction"
                                           setCar stack newRib
                                           decodeStack state stack
 
@@ -474,6 +475,7 @@ primitive _ n _ = do error ("Primitive #" ++ (cast n) ++ " is not yet implemente
 
 setGlobal : Rib -> Rib -> HasIO io => io (Rib)
 setGlobal symtbl val = do symCar <- rCar symtbl
+                          putStrLn "setGlobal"
                           setCar symCar val
                           rCdr symtbl
 
@@ -506,8 +508,10 @@ getVar stack opnd = do rCar opnd
 setVar : Rib -> Rib -> Rib -> HasIO io => io ()
 setVar stack (RInt n) val = do stackTail <- rListTail stack n
                                stackTailCar <- rCar stackTail
+                               putStrLn "setVar rib"
                                setCar stackTailCar val
-setVar stack opnd val = do setCar opnd val
+setVar stack opnd val = do putStrLn "setVar opnd"
+                           setCar opnd val
 
 
 mutual
@@ -521,7 +525,8 @@ mutual
                   superNewStack <- rCons state stackCar newStack
                   lmdaCall state code next nextNargs superNewStack newCont stackCdr id
           else if isNextRib
-                  then do setCar newCont stack
+                  then do putStrLn "lmdaCall isNextRib"
+                          setCar newCont stack
                           setCgr newCont next
                           codeCgr <- rCgr code
                           run state codeCgr newStack (id + 1)
@@ -529,6 +534,7 @@ mutual
                   else do k <- getCont stack
                           k0 <- rCar k
                           k2 <- rCgr k
+                          putStrLn "setVar rib"
                           setCar newCont k0
                           setCgr newCont k2
                           codeCgr <- rCgr code

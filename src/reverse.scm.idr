@@ -211,7 +211,19 @@ setCar (RRef stack) newval = do ref <- readIORef stack
                                 let v = (MakeRibContainer ref.id newval ref.cdr ref.cgr )
                                 writeIORef stack v
                                 --modifyIORef stack (\ref => { car := newval } ref)
-setCar _ _ = do error "First argument of setcar is not a rib"
+setCar a b = do globalCounter <- newIORef 0 -- only used for the ribCreator
+                ribCreator <- pure (MakeRib globalCounter)
+                true <- ribCreator (RInt 0) (RInt 0) (RInt rSingletonType)
+                false <- ribCreator (RInt 0) (RInt 0) (RInt rSingletonType)
+                nil <- ribCreator (RInt 0) (RInt 0) (RInt rSingletonType)
+                pos <- newIORef 0
+                let state = MkState true false nil pos globalCounter nil
+                putStrLn "AAAAA:"
+                print state a
+                putStrLn "BBBBB:"
+                print state b
+                error "Hey look"
+--setCar _ _ = do error "First argument of setcar is not a rib"
 
 setCdr : Rib -> Rib -> HasIO io => io ()
 setCdr (RRef stack) newval = do ref <- readIORef stack
@@ -286,6 +298,7 @@ mutual
   addInstruction : State -> Rib -> Rib -> Rib -> HasIO io => io (Rib)
   addInstruction state op opnd stack = do oscar <- rCar stack
                                           newRib <- MakeRib state.globalCounter op opnd oscar
+                                          putStrLn "addinstruction"
                                           setCar stack newRib
                                           decodeStack state stack
 
@@ -462,6 +475,7 @@ primitive _ n _ = do error ("Primitive #" ++ (cast n) ++ " is not yet implemente
 
 setGlobal : Rib -> Rib -> HasIO io => io (Rib)
 setGlobal symtbl val = do symCar <- rCar symtbl
+                          putStrLn "setGlobal"
                           setCar symCar val
                           rCdr symtbl
 
@@ -494,8 +508,10 @@ getVar stack opnd = do rCar opnd
 setVar : Rib -> Rib -> Rib -> HasIO io => io ()
 setVar stack (RInt n) val = do stackTail <- rListTail stack n
                                stackTailCar <- rCar stackTail
+                               putStrLn "setVar rib"
                                setCar stackTailCar val
-setVar stack opnd val = do setCar opnd val
+setVar stack opnd val = do putStrLn "setVar opnd"
+                           setCar opnd val
 
 
 mutual
@@ -509,7 +525,8 @@ mutual
                   superNewStack <- rCons state stackCar newStack
                   lmdaCall state code next nextNargs superNewStack newCont stackCdr id
           else if isNextRib
-                  then do setCar newCont stack
+                  then do putStrLn "lmdaCall isNextRib"
+                          setCar newCont stack
                           setCgr newCont next
                           codeCgr <- rCgr code
                           run state codeCgr newStack (id + 1)
@@ -517,6 +534,7 @@ mutual
                   else do k <- getCont stack
                           k0 <- rCar k
                           k2 <- rCgr k
+                          putStrLn "setVar rib"
                           setCar newCont k0
                           setCgr newCont k2
                           codeCgr <- rCgr code

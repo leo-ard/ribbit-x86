@@ -503,6 +503,7 @@ getVar stack (RInt n) = do stackTail <- rListTail stack n
                            pure stackTailCar
 getVar stack opnd = do rCar opnd
 
+-- Fonction problématique (je pense) ça arrive seulement pour un set tho
 setVar : Rib -> Rib -> Rib -> HasIO io => io ()
 setVar stack (RInt n) val = do stackTail <- rListTail stack n
                                stackTailCar <- rCar stackTail
