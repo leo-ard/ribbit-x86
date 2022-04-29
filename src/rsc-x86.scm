@@ -12,7 +12,7 @@
 ;;;----------------------------------------------------------------------------
 
 (define debug? #t) ;; set to #t to show expanded code, intermediate code and x86 code
-(define display-method write) ;; put pp for testing, write to deploy !
+(define display-method pp #;write) ;; put pp for testing, write to deploy !
 
 ;;;----------------------------------------------------------------------------
 
@@ -1283,7 +1283,9 @@
 
   (cond 
     ((symbol? expr)
-     expr)
+     (if (memq expr mutable-vars)
+        (cons '$field0 (cons expr '()))
+        expr))
     ((pair? expr)
      (let ((first (car expr)))
        (cond 
@@ -1316,7 +1318,6 @@
                  (body-rest (simplify-begin (mve-list body
                                                       mutable-vars*)))
                  )
-            (if debug? (begin (display " # mutable-params : ") (pp mutable-params)))
             (cons 'lambda
                   (cons params
                         (if mutable-params
