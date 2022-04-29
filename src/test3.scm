@@ -7,30 +7,29 @@
 ;(h 65 66)
 
 ;($putchar ($putchar 65))
-(define (pure)
-  (pp global))
 
-(define (lambda2args a b c d)
-
-  (set! a 65)
-  (set! b 66)
-  ($putchar a)
-  ($putchar b)
-  ($putchar c)
-  ($putchar d))
-
-
-(define (hello a b)
-  (set! a 10)
-  (set! b 20)
-  (pp a)
-  (pp b)
-  
+(begin ;; display "call 1 --"
+  ($putchar 99) ($putchar 97) ($putchar 108) ($putchar 108) 
+  ($putchar 32) ($putchar 49) ($putchar 32) ($putchar 45) ($putchar 45)
   )
 
+(define (g x) ($putchar x))
 
-(hello 42)
-(pure)
-(lambda2args)
+(g 32)
+(g 79)
+(g 75)
+(g 10)
+
+;(begin  ;; mut 2 -
+;  ($putchar 109) ($putchar 117) ($putchar 116) ($putchar 32) ($putchar 50)
+;  ($putchar 32) ($putchar 45) ($putchar 32))
+;
+;(let ((x 65) (y 75))
+;  (set! x 79)
+;  ($putchar x)
+;  ($putchar y)) 
+;
+(define (f a b c d) (lambda (x) ($* ($+ a b) ($+ c x))))
+(f 1 2 3 4)
 
 

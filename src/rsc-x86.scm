@@ -516,6 +516,13 @@
 (define (gen-expr cgc expr cte tail?)
 
   (cond ((symbol? expr)
+         (if debug? 
+           (if (not (memv expr cte))
+             (begin
+               (error "Cannot find variable with name :" expr )
+               )
+
+             ))
          (let* ((var expr)
                 (i (- (length cte) (length (memv var cte)))))
            (gen-push-loc cgc i)
@@ -1284,8 +1291,8 @@
   (cond 
     ((symbol? expr)
      (if (memq expr mutable-vars)
-        (cons '$field0 (cons expr '()))
-        expr))
+       (cons '$field0 (cons expr '()))
+       expr))
     ((pair? expr)
      (let ((first (car expr)))
        (cond 
@@ -1303,11 +1310,21 @@
           (let* ((bindings (cadr expr))
                  (body (cddr expr))
                  (vars (map car bindings))
-
-                 (mutable-vars* (mv expr))
-                 (body* (simplify-begin (mve-list body mutable-vars))))
-            expr ;; gonna go after
-            ;; recursive call
+                 (values (mve-list (map cdr bindings) mutable-vars))
+                 (bindings (map cons vars values)) ;; reconstruct the binding list with the new values
+                 (mutable-vars* (mv-list body))
+                 (mutable-params (intersection mutable-vars* vars))
+                 (body* (simplify-begin (mve-list body mutable-vars*))))
+            (cons 'let
+                  (cons 
+                    (map (lambda (var) (cons (car var) 
+                                             (if (memq (car var) mutable-params)
+                                               (cons (cons '$rib 
+                                                           (cons (cadr var)
+                                                                 (cons 0 (cons 0 '())))) '())
+                                               (cdr var))))
+                         bindings)
+                    body*))
 
             ))
          ((eqv? first 'lambda)
@@ -1316,11 +1333,10 @@
                  (mutable-vars* (mv-list body))
                  (mutable-params (intersection mutable-vars* params))
                  (body-rest (simplify-begin (mve-list body
-                                                      mutable-vars*)))
-                 )
+                                                      mutable-vars*))))
             (cons 'lambda
                   (cons params
-                        (if mutable-params
+                        (if (pair? mutable-params)
                           (cons (cons 'let 
                                       (cons (map (lambda (var) 
                                                    (cons var 
@@ -1329,11 +1345,8 @@
                                                                            (cons 0 (cons 0 '())))) '()))) 
                                                  mutable-params)
                                             body-rest)) '())
-                          body-rest
+                          body-rest)))))
 
-                          )
-                        )))
-          )
          (else (mve-list expr mutable-vars)))))
     (else  (expand-constant expr))))
 
@@ -1347,6 +1360,41 @@
 ;;;----------------------------------------------------------------------------
 
 ;; Closure conversion.
+
+
+
+
+(define (fv-closure lst)
+
+  ;; Generate correct closure with ribs. For example '(1 2 3) =>  ($rib 1 2 3)
+  ;; and '(1 2 3 4) => ($rib 1 2 ($rib 3 4) ;; 
+
+  (let ((len-lst (length lst)))
+    (if (> len-lst 3)
+      (cons '$rib 
+            (cons (car lst)
+                  (cons (cadr lst)
+                        (cons (fv-closure (cddr lst)) '()))))
+      
+      (cons '$rib 
+            (cons (car lst)
+                  (if (pair? (cdr lst)) 
+                    (cons (cadr lst)
+                          (if (pair? (cddr lst))
+                            (cons (caddr lst) '())
+                            (cons 0 '())))
+                    (cons 0 (cons 0 '()))))))))
+
+
+
+(define (list-index val lst equal?)
+  (define (list-index-rec val lst n)
+    (cond ((not (pair? lst)) -1) ;; check first if its not a pair
+          ((equal? val (car lst))
+           n)
+          (else
+           (list-index-rec val (cdr lst) (+ n 1)))))
+  (list-index-rec val lst 0))
 
 (define (cc expr free-vars)
 
@@ -1367,7 +1415,68 @@
   ;; le nom de la liste car ça changerait la position des autres variables
   ;; libres).
 
-  expr) ;; à compléter!
+  (cond 
+    ((symbol? expr)
+     (let ((index (list-index expr free-vars eq?)))
+       (if (eqv? index -1)
+         expr
+         (get-free-var index (length free-vars)))))
+
+    ((pair? expr)
+     (let ((first (car expr)))
+       (cond 
+         ((eqv? first 'quote) expr)
+         ((eqv? first 'begin) 
+          (cons 'begin (cc-list (cdr expr) free-vars)))
+         ((eqv? first 'if)
+          (cons 'if (cc-list (cdr expr) free-vars)))
+         ((assv first prims)
+          (cons first (cc-list (cdr expr) free-vars)))
+         ((eqv? first 'let)
+          expr
+          #;(let* ((bindings (cadr expr))
+          (body (cddr expr))
+          (vars (map car bindings))
+          (values (mve-list (map cdr bindings) mutable-vars))
+          (bindings (map cons vars values)) ;; reconstruct the binding list with the new values
+          (mutable-vars* (mv-list body))
+          (mutable-params (intersection mutable-vars* vars))
+          (body* (simplify-begin (mve-list body mutable-vars*))))
+         (cons 'let
+               (cons 
+                 (map (lambda (var) (cons (car var) 
+                                          (if (memq (car var) mutable-params)
+                                            (cons (cons '$rib 
+                                                        (cons (cadr var)
+                                                              (cons 0 (cons 0 '())))) '())
+                                            (cdr var))))
+                      bindings)
+                 body*))
+
+         ))
+     ((eqv? first 'lambda)
+      (let* ((params (cadr expr))
+             (body (cddr expr))
+             (free-vars* (fv expr))
+             (n-fv (length free-vars*))
+             (body* (simplify-begin (cc-list body free-vars*))))
+        (cons '$rib
+              (cons (cons 'lambda
+                          (cons (cons '$self params) ;; ajout de $self
+                                body*))
+                    (cons 
+                      (cond 
+                        ((> n-fv 2)
+                         (fv-closure free-vars*))
+                        ((eqv? n-fv 1)
+                         (car free-vars*))
+                        (else 0)) ;; n-fv == 0
+                      (cons 
+                        1 ;; procedure type
+                        '()))))))
+
+     (else (cc-list expr free-vars)))))
+(else  (expand-constant expr)))) ;; à compléter!
 
 (define (cc-list exprs free-vars)
   (if (pair? exprs)

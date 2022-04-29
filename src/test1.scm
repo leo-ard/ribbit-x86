@@ -213,6 +213,17 @@
 
 (mut 65 65 75 10)
 
+(begin  ;; mut 2 -
+  ($putchar 109) ($putchar 117) ($putchar 116) ($putchar 32) ($putchar 50)
+  ($putchar 32) ($putchar 45) ($putchar 32))
+
+(let ((x 65) (y 75) (z 65))
+  (set! x 79)
+  (set! z 10)
+  ($putchar x)
+  ($putchar y)
+  ($putchar z)) 
+
 (begin ;; display "calling ($exit 0)"
   ($putchar 99) ($putchar 97) ($putchar 108) ($putchar 108)
   ($putchar 105) ($putchar 110) ($putchar 103) ($putchar 32)
