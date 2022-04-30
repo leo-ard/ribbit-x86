@@ -14,52 +14,52 @@
   ($putchar 36) ($putchar 102) ($putchar 105) ($putchar 101)
   ($putchar 108) ($putchar 100) ($putchar 48) ($putchar 32)
   ($putchar 45) ($putchar 45) ($putchar 32))
-(let ((a ($rib 111 95 95)) (b ($rib 107 95 95)))
-  ($putchar ($field0 a)) ($putchar ($field0 b)) ($putchar 10))
+(let ((a1 ($rib 111 95 95)) (b ($rib 107 95 95)))
+  ($putchar ($field0 a1)) ($putchar ($field0 b)) ($putchar 10))
 
 (begin ;; display "$field1 -- ok"
   ($putchar 36) ($putchar 102) ($putchar 105) ($putchar 101)
   ($putchar 108) ($putchar 100) ($putchar 49) ($putchar 32)
   ($putchar 45) ($putchar 45) ($putchar 32))
-(let ((a ($rib 95 111 95)) (b ($rib 95 107 95)))
-  ($putchar ($field1 a)) ($putchar ($field1 b)) ($putchar 10))
+(let ((a2 ($rib 95 111 95)) (b ($rib 95 107 95)))
+  ($putchar ($field1 a2)) ($putchar ($field1 b)) ($putchar 10))
 
 (begin ;; display "$field2 -- ok"
   ($putchar 36) ($putchar 102) ($putchar 105) ($putchar 101)
   ($putchar 108) ($putchar 100) ($putchar 50) ($putchar 32)
   ($putchar 45) ($putchar 45) ($putchar 32))
-(let ((a ($rib 95 95 111)) (b ($rib 95 95 107)))
-  ($putchar ($field2 a)) ($putchar ($field2 b)) ($putchar 10))
+(let ((a3 ($rib 95 95 111)) (b ($rib 95 95 107)))
+  ($putchar ($field2 a3)) ($putchar ($field2 b)) ($putchar 10))
 
 (begin ;; display "$field0-set! -- ok"
   ($putchar 102) ($putchar 105) ($putchar 101) ($putchar 108)
   ($putchar 100) ($putchar 48) ($putchar 45) ($putchar 115)
   ($putchar 101) ($putchar 116) ($putchar 33) ($putchar 32)
   ($putchar 45) ($putchar 45) ($putchar 32))
-(let ((a ($rib 95 95 95)) (b ($rib 95 95 95)))
-  ($field0-set! a 111)
+(let ((a4 ($rib 95 95 95)) (b ($rib 95 95 95)))
+  ($field0-set! a4 111)
   ($field0-set! b 107)
-  ($putchar ($field0 a)) ($putchar ($field0 b)) ($putchar 10))
+  ($putchar ($field0 a4)) ($putchar ($field0 b)) ($putchar 10))
 
 (begin ;; display "$field1-set! -- ok"
   ($putchar 102) ($putchar 105) ($putchar 101) ($putchar 108)
   ($putchar 100) ($putchar 49) ($putchar 45) ($putchar 115)
   ($putchar 101) ($putchar 116) ($putchar 33) ($putchar 32)
   ($putchar 45) ($putchar 45) ($putchar 32))
-(let ((a ($rib 95 95 95)) (b ($rib 95 95 95)))
-  ($field1-set! a 111)
+(let ((a5 ($rib 95 95 95)) (b ($rib 95 95 95)))
+  ($field1-set! a5 111)
   ($field1-set! b 107)
-  ($putchar ($field1 a)) ($putchar ($field1 b)) ($putchar 10))
+  ($putchar ($field1 a5)) ($putchar ($field1 b)) ($putchar 10))
 
 (begin ;; display "$field2-set! -- ok"
   ($putchar 102) ($putchar 105) ($putchar 101) ($putchar 108)
   ($putchar 100) ($putchar 50) ($putchar 45) ($putchar 115)
   ($putchar 101) ($putchar 116) ($putchar 33) ($putchar 32)
   ($putchar 45) ($putchar 45) ($putchar 32))
-(let ((a ($rib 95 95 95)) (b ($rib 95 95 95)))
-  ($field2-set! a 111)
+(let ((a6 ($rib 95 95 95)) (b ($rib 95 95 95)))
+  ($field2-set! a6 111)
   ($field2-set! b 107)
-  ($putchar ($field2 a)) ($putchar ($field2 b)) ($putchar 10))
+  ($putchar ($field2 a6)) ($putchar ($field2 b)) ($putchar 10))
 
 (begin ;; display "call lambda -- ok"
   ($putchar 99) ($putchar 97) ($putchar 108) ($putchar 108) ($putchar 32)
@@ -94,7 +94,7 @@
   ($putchar 97) ($putchar 114) ($putchar 32) ($putchar 45) ($putchar 45)
   ($putchar 32))
 (if ($eqv? 3
-           (((lambda (a) (lambda (x) (let ((a ($+ a x))) a))) 2) 1))
+           (((lambda (a7) (lambda (x) (let ((a7 ($+ a7 x))) a7))) 2) 1))
     (begin
       ($putchar 111) ($putchar 107) ($putchar 10))
     (begin
@@ -109,7 +109,7 @@
   ($putchar 97) ($putchar 114) ($putchar 115) ($putchar 32) ($putchar 45)
   ($putchar 45) ($putchar 32))
 (if ($eqv? 6
-           (((lambda (a b) (lambda (x) (let ((b ($+ ($+ a b) x))) b))) 2 3) 1))
+           (((lambda (a8 b) (lambda (x) (let ((b ($+ ($+ a8 b) x))) b))) 2 3) 1))
     (begin
       ($putchar 111) ($putchar 107) ($putchar 10))
     (begin

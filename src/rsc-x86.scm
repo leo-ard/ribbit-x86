@@ -611,13 +611,13 @@
                                            cgc 
                                            (x86-rdi) 
                                            (x86-mem (* 8  (+ 1 nargs)) (x86-rsp)))
-                                         ;; get func addr
+                                         ;; get func-rib addr
                                          (x86-mov 
                                            cgc 
                                            (x86-rbx) (x86-mem (* 8  nargs) (x86-rsp)))
-                                         (gen-move cgc nargs fs)  ;; delete old frame
+                                         (gen-move cgc (+ 1 nargs) fs)  ;; delete old frame and keep func-rib
                                          (x86-push cgc (x86-rdi)) ;; push return addr
-                                         (x86-jmp cgc (x86-rbx))) ;; jump to function call
+                                         (x86-jmp cgc (x86-mem -7 (x86-rbx)))) ;; jump to function inside rib-func
                                        (let ((ra (asm-make-label* cgc)))
                                          (gen-push-ra cgc ra)
                                          (gen-jump cgc nargs)
@@ -1277,6 +1277,14 @@
 
   (simplify (reverse exprs) '()))
 
+(define (filter foo lst)
+  (if (pair? lst)
+    (if (foo lst)
+      (cons (car lst) (filter foo (cdr lst)))
+      (filter foo (cdr lst)))
+    '()
+    ))
+
 ;;;----------------------------------------------------------------------------
 
 ;; Mutable variable elimination.
@@ -1314,7 +1322,8 @@
                  (vars (map car bindings))
                  (values (mve-list (map cdr bindings) mutable-vars))
                  (bindings (map cons vars values)) ;; reconstruct the binding list with the new values
-                 (mutable-vars* (mv-list body))
+                 (mutable-vars*  (mv-list body))
+                 ;(mutable-vars* (filter (lambda (x) (not (memq x vars))) mutable-vars))
                  (mutable-params (intersection mutable-vars* vars))
                  (body* (simplify-begin (mve-list body mutable-vars*))))
             (cons 'let
@@ -1398,6 +1407,7 @@
            (list-index-rec val (cdr lst) (+ n 1)))))
   (list-index-rec val lst 0))
 
+
 (define (cc expr free-vars)
 
   ;; TODO...
@@ -1435,50 +1445,48 @@
          ((assv first prims)
           (cons first (cc-list (cdr expr) free-vars)))
          ((eqv? first 'let)
-          expr
-          #;(let* ((bindings (cadr expr))
-          (body (cddr expr))
-          (vars (map car bindings))
-          (values (mve-list (map cdr bindings) mutable-vars))
-          (bindings (map cons vars values)) ;; reconstruct the binding list with the new values
-          (mutable-vars* (mv-list body))
-          (mutable-params (intersection mutable-vars* vars))
-          (body* (simplify-begin (mve-list body mutable-vars*))))
-         (cons 'let
-               (cons 
-                 (map (lambda (var) (cons (car var) 
-                                          (if (memq (car var) mutable-params)
-                                            (cons (cons '$rib 
-                                                        (cons (cadr var)
-                                                              (cons 0 (cons 0 '())))) '())
-                                            (cdr var))))
-                      bindings)
-                 body*))
+          (let* ((bindings (cadr expr))
+                 (body (cddr expr))
+                 (vars (map car bindings))
+                 (values (cc-list (map cdr bindings) free-vars))
+                 (bindings (map cons vars values)) ;; reconstruct the binding list with the new values
+                 ;(free-vars-tmp* (mv-list body))
+                 (free-vars* (map (lambda (x) 
+                                    (if (memq x vars) ;; if we rebind the variable, its not in the free-list anymore
+                                      #f
+                                      x)) 
+                                  free-vars))
+                 ;(mutable-params (intersection mutable-vars* vars))
+                 (body* (simplify-begin (cc-list body free-vars*))))
+            (cons 'let
+                  (cons 
+                    bindings
+                    body*))
 
-         ))
-     ((eqv? first 'lambda)
-      (let* ((params (cadr expr))
-             (body (cddr expr))
-             (free-vars* (fv expr))
-             (n-fv (length free-vars*))
-             (body* (simplify-begin (cc-list body free-vars*))))
-        (cons '$rib
-              (cons (cons 'lambda
-                          (cons (cons '$self params) ;; ajout de $self
-                                body*))
-                    (cons 
-                      (cond 
-                        ((> n-fv 2)
-                         (fv-closure free-vars*))
-                        ((eqv? n-fv 1)
-                         (car free-vars*))
-                        (else 0)) ;; n-fv == 0
-                      (cons 
-                        1 ;; procedure type
-                        '()))))))
+            ))
+         ((eqv? first 'lambda)
+          (let* ((params (cadr expr))
+                 (body (cddr expr))
+                 (free-vars* (fv expr))
+                 (n-fv (length free-vars*))
+                 (body* (simplify-begin (cc-list body free-vars*))))
+            (cons '$rib
+                  (cons (cons 'lambda
+                              (cons (cons '$self params) ;; ajout de $self
+                                    body*))
+                        (cons 
+                          (cond 
+                            ((>= n-fv 2)
+                             (fv-closure free-vars*))
+                            ((eqv? n-fv 1)
+                             (car free-vars*))
+                            (else 0)) ;; n-fv == 0
+                          (cons 
+                            1 ;; procedure type
+                            '()))))))
 
-     (else (cc-list expr free-vars)))))
-(else  (expand-constant expr)))) ;; à compléter!
+         (else (cc-list expr free-vars)))))
+    (else  (expand-constant expr)))) ;; à compléter!
 
 (define (cc-list exprs free-vars)
   (if (pair? exprs)
