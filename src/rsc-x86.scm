@@ -605,7 +605,7 @@
                                    (let ((nargs (length (cdr expr))))
                                      ;(x86-int3 cgc)
                                      (if tail?
-                                       (let ((fs (+ 1 (length cte)))) ;; tail call
+                                       (let ((fs (length cte))) ;; tail call
                                          ;; get return addr of func
                                          (x86-mov 
                                            cgc 
