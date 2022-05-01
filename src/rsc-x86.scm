@@ -151,7 +151,8 @@
   (if debug? (begin (display "#  ") (write '($getchar)) (newline)))
   (x86-call cgc (x86-global-label cgc 'getchar)) ;; call RTS getchar routine
   (x86-shl  cgc (x86-rax) (x86-imm-int 3 0))     ;; tag result as fixnum
-  (x86-push cgc (x86-rax))))                     ;; push result
+  (x86-push cgc (x86-rax))
+  #;(x86-int3 cgc)))                     ;; push result
 
 (def-prim 'putchar 1 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($putchar)) (newline)))
@@ -1468,6 +1469,7 @@
           (let* ((params (cadr expr))
                  (body (cddr expr))
                  (free-vars* (fv expr))
+                 (free-vars*-expr (map (lambda (expr) (cc expr free-vars)) free-vars*))
                  (n-fv (length free-vars*))
                  (body* (simplify-begin (cc-list body free-vars*))))
             (cons '$rib
@@ -1477,9 +1479,9 @@
                         (cons 
                           (cond 
                             ((>= n-fv 2)
-                             (fv-closure free-vars*))
+                             (fv-closure free-vars*-expr))
                             ((eqv? n-fv 1)
-                             (car free-vars*))
+                             (car free-vars*-expr))
                             (else 0)) ;; n-fv == 0
                           (cons 
                             1 ;; procedure type
