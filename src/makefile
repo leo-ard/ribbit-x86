@@ -39,7 +39,7 @@ test2: $(RSC).bundle.scm
 #	rm test2.exe$(EXT) test2.exe
 
 test3: $(RSC).bundle.scm
-	time ./rsc -t $(TARGET) -l empty -m -c "gsi -:d4 $<" -o test3.exe$(EXT) test3.scm
+	time ./rsc -t $(TARGET) -l $(LIB) -m -c "gsi -:d4 $<" -o test3.exe$(EXT) test3.scm
 	gcc -o test3.exe test3.exe$(EXT)
 	echo "(this '(is a list) containing 5 \"elements\")" | ./test3.exe
 #	rm test3.exe$(EXT) test3.exe
