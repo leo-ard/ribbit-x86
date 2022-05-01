@@ -11,7 +11,7 @@
 
 ;;;----------------------------------------------------------------------------
 
-(define debug? #t) ;; set to #t to show expanded code, intermediate code and x86 code
+(define debug? #f) ;; set to #t to show expanded code, intermediate code and x86 code
 (define display-method pp #;write) ;; put pp for testing, write to deploy !
 
 ;;;----------------------------------------------------------------------------
@@ -605,13 +605,22 @@
                                    ;(x86-int3 cgc)
                                    (let ((nargs (length (cdr expr))))
                                      ;(x86-int3 cgc)
+                                         
+                                     ;(x86-int3 cgc)
                                      (if tail?
-                                       (let ((fs (length cte))) ;; tail call
+                                       (let ((fs (length cte))
+                                             (ra-index (list-index #t cte* eq?))) ;; tail call
+                                         (pp "helpme")
+                                         (pp cte)
+                                         (pp cte*)
+                                         (pp nargs)
+
+
                                          ;; get return addr of func
                                          (x86-mov 
                                            cgc 
                                            (x86-rdi) 
-                                           (x86-mem (* 8  (+ 1 nargs)) (x86-rsp)))
+                                           (x86-mem (* 8 ra-index) (x86-rsp)))
                                          ;; get func-rib addr
                                          (x86-mov 
                                            cgc 
