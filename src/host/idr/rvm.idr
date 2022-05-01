@@ -211,7 +211,7 @@ setCar (RRef stack) newval = do ref <- readIORef stack
                                 let v = (MakeRibContainer ref.id newval ref.cdr ref.cgr )
                                 writeIORef stack v
                                 --modifyIORef stack (\ref => { car := newval } ref)
---setCar _ _ = do error "First argument of setcar is not a rib"
+setCar _ _ = do error "First argument of setcar is not a rib"
 
 setCdr : Rib -> Rib -> HasIO io => io ()
 setCdr (RRef stack) newval = do ref <- readIORef stack
@@ -491,12 +491,10 @@ getVar stack (RInt n) = do stackTail <- rListTail stack n
                            pure stackTailCar
 getVar stack opnd = do rCar opnd
 
--- Fonction problématique (je pense) ça arrive seulement pour un set tho
 setVar : Rib -> Rib -> Rib -> HasIO io => io ()
-setVar stack (RInt n) val = do stackTail <- rListTail stack n       -- <-- y doit y avoir qqchose de fucked là dedans
+setVar stack (RInt n) val = do stackTail <- rListTail stack n
                                stackTailCar <- rCar stackTail
-                               --setCar stackTailCar val              -- <-- c'est lui
-                               setCar stackTail val              -- <-- c'est lui
+                               setCar stackTail val
 setVar stack opnd val = do setCar opnd val
 
 
