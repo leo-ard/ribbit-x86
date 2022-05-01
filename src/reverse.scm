@@ -1,5 +1,0 @@
-(let ((my-list '(1 2 3 4 5 6)))
-  (display (append (cdr my-list)
-              (let ((_ #f))
-                   (if _ _ (quote ())))))
-  (display (reverse my-list)))

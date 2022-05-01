@@ -1,8 +1,0 @@
-(let ((yeehaw 65))
-  ;(let ((mylist '(1 2 3)))
-    (putchar yeehaw)
-    ;(set! mylist 66)
-    ;(putchar mylist)
-    (set! yeehaw 66)
-    (putchar yeehaw))
-;)
