@@ -10,9 +10,10 @@
 ;; modifications sont requises pour l'étape 4.
 
 ;;;----------------------------------------------------------------------------
+;(display "# 0")
 
-(define debug? #f) ;; set to #t to show expanded code, intermediate code and x86 code
-(define display-method pp #;write) ;; put pp for testing, write to deploy !
+(define debug? #t) ;; set to #t to show expanded code, intermediate code and x86 code
+(define display-method write) ;; put pp for testing, write to deploy !
 
 ;;;----------------------------------------------------------------------------
 
@@ -111,7 +112,7 @@
   (x86-pop  cgc (x86-rax)) ;; 2
   (x86-cmp  cgc (x86-rax) (x86-rbx)) ;; 2 - 1 => 1 
   (x86-mov  cgc (x86-rax) (true-value cgc))  ;; result = #t (maybe)
-  (x86-jb   cgc done)
+  (x86-jl   cgc done)
   (x86-mov  cgc (x86-rax) (false-value cgc))  ;; result = #t (maybe)
   (x86-label cgc done)
   (x86-push cgc (x86-rax))))
@@ -242,11 +243,6 @@
   (if debug? (begin (display "#  ") (write (cons 'push-ra (cons (asm-label-id lbl) '()))) (newline)))
   (x86-lea  cgc (x86-rax) lbl) ;; get address of label
   (x86-push cgc (x86-rax)))    ;; push it
-
-(define-macro (repeat n ins)
-   `(begin ,@(map (lambda (x) ins) (iota n))))
-
-  
 
 (define (gen-jump cgc nargs)
   (if debug? (begin (display "#  ") (write (cons 'jump (cons nargs '()))) (newline)))
@@ -610,11 +606,6 @@
                                      (if tail?
                                        (let ((fs (length cte))
                                              (ra-index (list-index #t cte* eq?))) ;; tail call
-                                         (pp "helpme")
-                                         (pp cte)
-                                         (pp cte*)
-                                         (pp nargs)
-
 
                                          ;; get return addr of func
                                          (x86-mov 
@@ -1131,6 +1122,7 @@
 
 ;; Operation on sets.
 
+
 (define (union lst1 lst2)
   (cond ((null? lst1)
          lst2)
@@ -1299,6 +1291,19 @@
 
 ;; Mutable variable elimination.
 
+(define (map2-rec func lst1 lst2 res)
+  (if (and (pair? lst1) (pair? lst2))
+    (map2-rec func 
+              (cdr lst1) 
+              (cdr lst2)
+              (cons (func (car lst1) (car lst2)) res))
+    res
+
+    ))
+
+(define (map2 func lst1 lst2)
+  (map2-rec func lst1 lst2 '()))
+
 (define (mve expr mutable-vars)
 
   ;; TODO...
@@ -1324,15 +1329,18 @@
          ((assv first prims)
           (cons first (mve-list (cdr expr) mutable-vars)))
          ((eqv? first 'set!)
-          (let ((body-rest (mve-list (cdr expr) (mv-list (cdr expr)))))
-            (cons '$field0-set! body-rest)))
+         ; (set! loop (lambda (n) (if (($field0 '<) n '0) '0 (($field0 '+) n (loop (($field0 '-) n '1))))))
+
+          (let* ((name (cadr expr))
+                 (body-rest (mve (caddr expr) (cons name mutable-vars))))
+            (cons '$field0-set! (cons name (cons body-rest '())))))
          ((eqv? first 'let)
           (let* ((bindings (cadr expr))
                  (body (cddr expr))
                  (vars (map car bindings))
                  (values (mve-list (map cdr bindings) mutable-vars))
-                 (bindings (map cons vars values)) ;; reconstruct the binding list with the new values
-                 (mutable-vars*  (mv-list body))
+                 (bindings (map2 cons vars values)) ;; reconstruct the binding list with the new values
+                 (mutable-vars*  (union (mv-list body) mutable-vars))
                  ;(mutable-vars* (filter (lambda (x) (not (memq x vars))) mutable-vars))
                  (mutable-params (intersection mutable-vars* vars))
                  (body* (simplify-begin (mve-list body mutable-vars*))))
@@ -1351,7 +1359,7 @@
          ((eqv? first 'lambda)
           (let* ((params (cadr expr))
                  (body (cddr expr))
-                 (mutable-vars* (mv-list body))
+                 (mutable-vars* (union (mv-list body) mutable-vars))
                  (mutable-params (intersection mutable-vars* params))
                  (body-rest (simplify-begin (mve-list body
                                                       mutable-vars*))))
@@ -1459,7 +1467,7 @@
                  (body (cddr expr))
                  (vars (map car bindings))
                  (values (cc-list (map cdr bindings) free-vars))
-                 (bindings (map cons vars values)) ;; reconstruct the binding list with the new values
+                 (bindings (map2 cons vars values)) ;; reconstruct the binding list with the new values
                  ;(free-vars-tmp* (mv-list body))
                  (free-vars* (map (lambda (x) 
                                     (if (memq x vars) ;; if we rebind the variable, its not in the free-list anymore
@@ -1548,6 +1556,8 @@
 
 (define (read-all)
   (let ((x (read)))
+    ;(pp "here")
+    
     (if (eof-object? x)
         '()
         (cons x (read-all)))))
