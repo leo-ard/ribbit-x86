@@ -494,7 +494,7 @@ getVar stack opnd = do rCar opnd
 setVar : Rib -> Rib -> Rib -> HasIO io => io ()
 setVar stack (RInt n) val = do stackTail <- rListTail stack n
                                stackTailCar <- rCar stackTail
-                               setCar stackTailCar val
+                               setCar stackTail val
 setVar stack opnd val = do setCar opnd val
 
 
