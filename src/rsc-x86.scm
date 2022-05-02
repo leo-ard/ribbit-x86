@@ -12,7 +12,7 @@
 ;;;----------------------------------------------------------------------------
 ;(display "# 0")
 
-(define debug? #t) ;; set to #t to show expanded code, intermediate code and x86 code
+(define debug? #f) ;; set to #t to show expanded code, intermediate code and x86 code
 (define display-method write) ;; put pp for testing, write to deploy !
 
 ;;;----------------------------------------------------------------------------
@@ -152,8 +152,7 @@
   (if debug? (begin (display "#  ") (write '($getchar)) (newline)))
   (x86-call cgc (x86-global-label cgc 'getchar)) ;; call RTS getchar routine
   (x86-shl  cgc (x86-rax) (x86-imm-int 3 0))     ;; tag result as fixnum
-  (x86-push cgc (x86-rax))
-  #;(x86-int3 cgc)))                     ;; push result
+  (x86-push cgc (x86-rax))))                     ;; push result
 
 (def-prim 'putchar 1 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($putchar)) (newline)))
@@ -1415,14 +1414,14 @@
                     (cons 0 (cons 0 '()))))))))
 
 
+(define (list-index-rec val lst n)
+  (cond ((not (pair? lst)) -1) ;; check first if its not a pair
+        ((equal? val (car lst))
+         n)
+        (else
+          (list-index-rec val (cdr lst) (+ n 1)))))
 
 (define (list-index val lst equal?)
-  (define (list-index-rec val lst n)
-    (cond ((not (pair? lst)) -1) ;; check first if its not a pair
-          ((equal? val (car lst))
-           n)
-          (else
-           (list-index-rec val (cdr lst) (+ n 1)))))
   (list-index-rec val lst 0))
 
 
